@@ -1,0 +1,156 @@
+{
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "id": "workflows-to-files",
+  "name": "workflows to files",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "url": "http://YOUR_N8N_HOST:PORT/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -300,
+        80
+      ],
+      "id": "node-fetch-all-workflows",
+      "name": "Fetch All Workflows",
+      "credentials": {
+        "n8nApi": {
+          "id": "YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n account"
+        }
+      },
+      "notes": "Retrieves all workflows from the n8n API to export them as individual JSON files."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Splits the data array into separate items\nreturn items[0].json.data.map(workflow => ({ json: workflow }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        80
+      ],
+      "id": "node-split-workflows-array",
+      "name": "Split Workflows Array",
+      "notes": "Splits the workflows array into individual items, creating one item per workflow for processing."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepares JSON files in the binary.file property\nreturn items.map(item => {\n  const jsonText = JSON.stringify(item.json, null, 2);\n  const buffer = Buffer.from(jsonText);\n  item.binary = {\n    file: {\n      data: buffer,\n      mimeType: 'application/json',\n      fileName: `${item.json.name.replace(/\\s+/g, '_')}.json`,\n    }\n  };\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        80
+      ],
+      "id": "node-prepare-json-files",
+      "name": "Prepare JSON Files",
+      "notes": "Converts each workflow into a JSON file format with proper filename and binary data structure."
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/path/to/your/n8n/directory/{{ $binary.file.fileName }}",
+        "dataPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        240,
+        80
+      ],
+      "id": "node-save-workflow-files",
+      "name": "Save Workflow Files",
+      "notes": "Writes each workflow JSON file to the local filesystem in the n8n directory."
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "any"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -500,
+        80
+      ],
+      "id": "node-tool-workflow-trigger",
+      "name": "Tool Workflow Trigger",
+      "notes": "Triggered by MCP server when the generate files tool is called to export all workflows to JSON files."
+    }
+  ],
+  "connections": {
+    "Fetch All Workflows": {
+      "main": [
+        [
+          {
+            "node": "Split Workflows Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Workflows Array": {
+      "main": [
+        [
+          {
+            "node": "Prepare JSON Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare JSON Files": {
+      "main": [
+        [
+          {
+            "node": "Save Workflow Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "DEMO_VERSION_ID",
+  "triggerCount": 0,
+  "tags": []
+}

@@ -1,0 +1,126 @@
+{
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "id": "n8n-mcp-server",
+  "name": "n8n mcp server",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "DEMO_WEBHOOK_PATH"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "id": "node-mcp-server-endpoint",
+      "name": "MCP Server Endpoint",
+      "webhookId": "DEMO_WEBHOOK_PATH",
+      "notes": "Exposes MCP (Model Context Protocol) server endpoint for AI agents to interact with n8n workflows and tools."
+    },
+    {
+      "parameters": {
+        "toolDescription": "get all workflows",
+        "url": "http://YOUR_N8N_HOST:PORT/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        180
+      ],
+      "id": "node-get-all-workflows-tool",
+      "name": "Get All Workflows Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n account"
+        }
+      },
+      "notes": "HTTP tool that retrieves all workflows from n8n API. Available to AI agents via MCP protocol."
+    },
+    {
+      "parameters": {
+        "description": "call this tool to generate json files for workflows\n/start",
+        "workflowId": {
+          "__rl": true,
+          "value": "workflows-to-files",
+          "mode": "list",
+          "cachedResultName": "workflows to files"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "any"
+          ],
+          "schema": [
+            {
+              "id": "any",
+              "displayName": "any",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        40,
+        180
+      ],
+      "id": "node-generate-workflow-files-tool",
+      "name": "Generate Workflow Files Tool",
+      "notes": "Workflow tool that exports all n8n workflows to JSON files. Triggered by AI agents through MCP when they need to generate workflow files."
+    }
+  ],
+  "connections": {
+    "Get All Workflows Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Endpoint",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Workflow Files Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Endpoint",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "DEMO_VERSION_ID",
+  "triggerCount": 1,
+  "tags": []
+}

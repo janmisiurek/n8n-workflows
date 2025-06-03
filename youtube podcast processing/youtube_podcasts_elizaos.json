@@ -1,0 +1,979 @@
+{
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "id": "youtube-podcasts-processing-elizaos",
+  "name": "YouTube Podcasts Processing for ElizaOS",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=http://YOUR_API_HOST:PORT/youtube/video/{{ $json.id }}/transcript",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lang",
+              "value": "en"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        668.75
+      ],
+      "id": "node-get-video-transcript",
+      "name": "Get Video Transcript",
+      "notes": "Fetches complete YouTube video transcript in English with timestamps in JSON format"
+    },
+    {
+      "parameters": {
+        "url": "=http://YOUR_API_HOST:PORT/youtube/video/{{ $json.id }}/description",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "lang",
+              "value": "en"
+            },
+            {
+              "name": "format",
+              "value": "segments"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        868.75
+      ],
+      "id": "node-get-video-description",
+      "name": "Get Video Description",
+      "notes": "Fetches YouTube video description in segments format which may contain chapter timestamps"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobierz dane wejściowe (opis)\nconst input = $input.first().json.description;\n\n// Rozdziel opis na linie\nconst lines = input.split('\\n');\n\n// Utwórz tablicę rozdziałów\nconst chapters = lines.map(line => {\n    // Dopasuj czas (hh:mm:ss lub mm:ss)\n    const timeMatch = line.match(/(\\d{1,2}:\\d{2}(?::\\d{2})?)/);\n    if (timeMatch) {\n        let time = timeMatch[0];\n        \n        // Podziel czas na części (godziny, minuty, sekundy)\n        let parts = time.split(':');\n        // Jeśli dopasowany czas ma tylko minuty i sekundy, dodaj godziny jako \"00\"\n        if (parts.length === 2) {\n            parts.unshift(\"00\");\n        }\n        \n        // Upewnij się, że każda część jest dwucyfrowa\n        time = parts.map(p => p.padStart(2, '0')).join(':');\n\n        // Usuń sam czas z linii i pobierz tytuł\n        const startIndex = timeMatch.index + timeMatch[0].length;\n        const title = line.slice(startIndex).trim();\n\n        return { time, title };\n    }\n    return null;\n}).filter(chapter => chapter !== null);\n\n// Zwróć wynikowy JSON\nreturn chapters.map(chapter => ({ json: chapter }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        868.75
+      ],
+      "id": "node-extract-chapters",
+      "name": "Extract Chapters from Description",
+      "notes": "Parses video description looking for timestamps (mm:ss or hh:mm:ss) and extracts chapter titles",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        440,
+        768.75
+      ],
+      "id": "node-merge-transcript-chapters",
+      "name": "Merge Transcript and Chapters",
+      "notes": "Combines cleaned transcript with extracted chapters for further processing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const video = $input.first().json;\n\nif (!Array.isArray(video.transcript)) {\n  throw new Error(\"Brak segmentów w danych wejściowych.\");\n}\n\nconst segments = video.transcript\n  .filter(segment => !/<[^>]*>/.test(segment.text)) // Pomija te z tagami\n  .map(segment => ({\n    time: segment.start.split('.')[0], // Ucina milisekundy\n    text: segment.text.trim()\n  }));\n\nreturn segments.map(item => ({ json: item }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        668.75
+      ],
+      "id": "node-clean-transcript",
+      "name": "Clean Transcript Segments",
+      "notes": "Filters and cleans transcript segments: removes HTML tags, normalizes time, cleans text"
+    },
+    {
+      "parameters": {
+        "url": "=http://YOUR_API_HOST:PORT/youtube/video/{{ $json.id }}/info",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        460
+      ],
+      "id": "node-get-video-metadata",
+      "name": "Get Video Metadata",
+      "notes": "Fetches basic video information: title, channel, categories, URL, thumbnail"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        880,
+        717.5
+      ],
+      "id": "node-merge-metadata-content",
+      "name": "Merge Metadata with Content",
+      "notes": "Combines video metadata with processed content (chapters + transcript)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.all();\n\n// Pobieramy pierwszy obiekt jako bazowy\nconst output = { ...inputData[0].json };\n\n// Iterujemy przez resztę elementów i dodajemy je do obiektu\ninputData.slice(1).forEach((item, index) => {\n  Object.entries(item.json).forEach(([key, value]) => {\n    const newKey = `${key}_${index + 1}`; // Tworzymy nową unikalną nazwę klucza\n    output[newKey] = value;\n  });\n});\n\n// Zwracamy jeden scalony obiekt\nreturn [{ json: output }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        717.5
+      ],
+      "id": "node-combine-all-data",
+      "name": "Combine All Data",
+      "notes": "Merges all collected data (metadata + content) into single JSON object for AI processing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Jeżeli mamy tylko jeden obiekt, przetwarzamy go jako transkrypcję bez rozdziałów\nif (items.length === 1) {\n  const obj = items[0].json;\n  if (obj.segments && Array.isArray(obj.segments)) {\n    // Połącz wszystkie segmenty: usuń tagi i łącz tekst\n    const combinedText = obj.segments.map(segment => {\n      let text = segment.text || \"\";\n      text = text.replace(/<[^>]*>/g, \"\").trim();\n      return text;\n    }).join(\" \").trim();\n    return [{ json: { text: combinedText } }];\n  } else {\n    return items; // Jeśli brak segments, zwróć oryginalny obiekt\n  }\n}\n\n// Jeżeli input ma więcej niż jeden obiekt, przyjmujemy, że mamy osobne obiekty z rozdziałami i transkrypcją\nlet chapters = [];\nlet transcript = [];\n\n// Podziel input na rozdziały (obiekty z kluczem \"title\") i segmenty transkrypcji (obiekty z kluczem \"text\")\nitems.forEach(item => {\n  if (item.json.hasOwnProperty(\"title\")) {\n    chapters.push(item.json);\n  } else if (item.json.hasOwnProperty(\"text\")) {\n    transcript.push(item.json);\n  }\n});\n\n// Jeśli nie znaleziono rozdziałów, łączymy całą transkrypcję w jeden tekst\nif (chapters.length === 0) {\n  const combinedText = transcript.map(seg => {\n    let text = seg.text || \"\";\n    text = text.replace(/<[^>]*>/g, \"\").trim();\n    return text;\n  }).join(\" \").trim();\n  return [{ json: { text: combinedText } }];\n}\n\n// Funkcja pomocnicza – konwersja czasu \"hh:mm:ss\" do sekund\nfunction timeToSeconds(t) {\n  const parts = t.split(':');\n  return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);\n}\n\n// Sortuj segmenty transkrypcji oraz rozdziały według czasu\ntranscript.sort((a, b) => timeToSeconds(a.time) - timeToSeconds(b.time));\nchapters.sort((a, b) => timeToSeconds(a.time) - timeToSeconds(b.time));\n\nlet result = [];\n\n// Dla każdego rozdziału łącz segmenty transkrypcji, które mieszczą się między jego czasem startu a czasem startu kolejnego rozdziału\nfor (let i = 0; i < chapters.length; i++) {\n  let currentChapter = chapters[i];\n  let startSec = timeToSeconds(currentChapter.time);\n  let endSec = (i < chapters.length - 1) ? timeToSeconds(chapters[i + 1].time) : Infinity;\n  \n  // Pobierz segmenty dla danego rozdziału\n  let chapterTranscript = transcript.filter(segment => {\n    let segSec = timeToSeconds(segment.time);\n    return segSec >= startSec && segSec < endSec;\n  });\n  \n  // Połącz teksty segmentów\n  let combinedText = chapterTranscript.map(seg => seg.text).join(\" \").trim();\n  // Usuń tagi <...> z połączonego tekstu\n  combinedText = combinedText.replace(/<[^>]*>/g, \"\").trim();\n  \n  result.push({\n    title: currentChapter.title,\n    text: combinedText\n  });\n}\n\n// Zwróć wynik jako osobne elementy\nreturn result.map(item => ({ json: item }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        768.75
+      ],
+      "id": "node-map-chapters-transcript",
+      "name": "Map Chapters to Transcript",
+      "notes": "Intelligently maps chapters to corresponding transcript segments based on timestamps"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=  {{ $json.values() }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "# mission\nyou are an expert at summarize podcasts\n\n# input\npodcast data divided into sections: \n-title \n-description (potential source for chapters) \n-channel (source for channel name)\n-categories \n-url \n-title (chapter title if exist)\n-text (transcription of podcast)\n\n# output\nsummary of the podcast including the name of channel, title and main topics, chapters and x.com mentions of guests if there are in data\n\n# notes\nchannel name get from beginning of data section channel\nskip all advertising, sponsorships, community segments and technical issues"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1320,
+        717.5
+      ],
+      "id": "node-generate-ai-summary",
+      "name": "Generate AI Summary",
+      "notes": "Uses GPT-4o to create intelligent podcast summary with channel, topics, chapters and guest mentions",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    url: item.json.webpage_url,\n    thumbnail: item.json.thumbnail\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        320
+      ],
+      "id": "node-extract-url-thumbnail",
+      "name": "Extract URL and Thumbnail",
+      "notes": "Extracts video URL and thumbnail from metadata for use in agent API"
+    },
+    {
+      "parameters": {
+        "jsCode": "const merged = items.reduce((acc, item) => {\n  return { ...acc, ...item.json };\n}, {});\n\nreturn [{ json: merged }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        543.75
+      ],
+      "id": "node-merge-final-data",
+      "name": "Merge Final Data",
+      "notes": "Combines all processed data into single object ready for agent API submission"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobieramy wszystkie elementy wejściowe\nconst items = $input.all();\n\n// Przetwarzamy każdy element wejściowy\nconst result = items.map(item => {\n  // Pobieramy obiekt output, jeśli nie istnieje ustawiamy pusty obiekt\n  const output = item.json.output || {};\n  // Pobieramy wartość \"x.com guests mentions\", lub pustą tablicę gdy nie istnieje\n  const mentions = output[\"x.com guests mentions\"] || [];\n  \n  // Zwracamy nowy obiekt z polem mentions\n  return { json: { mentions } };\n});\n\n// Zwracamy wynik\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        593.75
+      ],
+      "id": "node-extract-mentions",
+      "name": "Extract X.com Mentions",
+      "notes": "Extracts guest mentions from X.com (Twitter) from AI summary for metadata"
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Funkcja czyszcząca tekst z nowych linii */\nconst removeNewlines = (str) => str.replace(/\\n/g, '');\n\n/* Funkcja dodająca escape do cudzysłowów */\nconst escapeQuotes = (str) => str.replace(/\"/g, '\\\\\"');\n\n/* Iterujemy po każdym elemencie inputu i łączymy oczyszczone wartości */\nconst combinedTexts = items.map(item => {\n  const { title, channel, description } = item.json.output;\n  const cleanTitle = escapeQuotes(removeNewlines(title));\n  const cleanChannel = escapeQuotes(removeNewlines(channel));\n  const cleanDescription = escapeQuotes(removeNewlines(description));\n  return `title: ${cleanTitle} | channel: ${cleanChannel} | description: ${cleanDescription}`;\n});\n\n/* Łączymy wszystkie teksty, oddzielając je separatorem \" | \". */\nconst finalText = combinedTexts.join(\" | \");\n\n/* Zwracamy wynik jako pojedynczy obiekt JSON. */\nreturn [{ json: { finalText } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        868.75
+      ],
+      "id": "node-format-text-api",
+      "name": "Format Text for API",
+      "notes": "Formats AI summary into text structure suitable for agent API (removes newlines, escapes characters)"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        543.75
+      ],
+      "id": "node-merge-output-data",
+      "name": "Merge Output Data",
+      "notes": "Combines URL, thumbnail, mentions and formatted text into single object for submission"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1540,
+        718.75
+      ],
+      "id": "node-schedule-monitor",
+      "name": "Schedule Monitor",
+      "notes": "Triggers workflow every 30 minutes to check for new podcast episodes on monitored channels"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -660,
+        668.75
+      ],
+      "id": "node-merge-id-lists",
+      "name": "Merge ID Lists",
+      "notes": "Combines list of already processed videos with list of new videos for comparison"
+    },
+    {
+      "parameters": {
+        "jsCode": "const newIds = items.map(item => item.json.id);\nreturn [{ json: { newIds } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        693.75
+      ],
+      "id": "node-extract-new-video-ids",
+      "name": "Extract New Video IDs",
+      "notes": "Extracts video IDs from YouTube channel API response into new videos list"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT url FROM yt_channels;\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1320,
+        843.75
+      ],
+      "id": "node-get-monitored-channels",
+      "name": "Get Monitored Channels",
+      "notes": "Fetches list of YouTube channel URLs to monitor from PostgreSQL database"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pobranie danych wejściowych\nconst inputData = $input.all();\n\n// Ekstrakcja wartości video_id do nowej tablicy\nconst videoIds = inputData.map(item => item.json.video_id);\n\n// Zwrócenie wyniku w oczekiwanym formacie\nreturn [{ json: { Ids: videoIds } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        493.75
+      ],
+      "id": "node-extract-processed-ids",
+      "name": "Extract Processed IDs",
+      "notes": "Extracts IDs of already processed videos from database into comparison list"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT video_id FROM watched;\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1100,
+        493.75
+      ],
+      "id": "node-get-processed-videos",
+      "name": "Get Processed Videos",
+      "notes": "Fetches list of already processed video IDs from PostgreSQL database"
+    },
+    {
+      "parameters": {
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        1160
+      ],
+      "id": "node-wait-between-videos",
+      "name": "Wait Between Videos",
+      "notes": "Introduces 1-minute delay between processing videos to avoid API rate limiting",
+      "webhookId": "DEMO_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of items) {\n  if (item.json && item.json.finalText) {\n    item.json.finalText = \"context: you listened to a given podcast, recommend it to your followers | \" + item.json.finalText;\n  }\n}\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        543.75
+      ],
+      "id": "node-add-recommendation-context",
+      "name": "Add Recommendation Context",
+      "notes": "Adds context to text informing agent that it listened to podcast and should recommend to followers"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        1132.5
+      ],
+      "id": "node-openai-gpt4o",
+      "name": "OpenAI GPT-4o Model",
+      "notes": "Configuration for OpenAI GPT-4o model used for generating podcast summaries"
+    },
+    {
+      "parameters": {
+        "options": {
+          "prompt": "Instructions:\n--------------\n{instructions}\n--------------\nCompletion:\n--------------\n{completion}\n--------------\n\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\n\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        1404,
+        937.5
+      ],
+      "id": "node-autofix-ai-response",
+      "name": "Auto-fix AI Response",
+      "notes": "Automatically fixes AI responses that don't meet output structure requirements"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO watched (video_id) VALUES ('{{ $json.id }}');\n",
+        "options": {
+          "queryReplacement": "={{ $json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        220
+      ],
+      "id": "node-save-processed-video-id",
+      "name": "Save Processed Video ID",
+      "notes": "Saves processed video ID to database to prevent reprocessing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ids = items[0] && Array.isArray(items[0].json.Ids) ? items[0].json.Ids : [];\nconst newIds = items[1] && Array.isArray(items[1].json.newIds) ? items[1].json.newIds : [];\n\n// Jeśli brak nowych ID, zwracamy pustą tablicę\nif (newIds.length === 0) {\n  return [];\n}\n\nconst uniqueIds = newIds.filter(id => !ids.includes(id));\n\nreturn uniqueIds.map(id => ({ json: { id } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        668.75
+      ],
+      "id": "node-filter-new-videos",
+      "name": "Filter New Videos Only",
+      "notes": "Compares lists and returns only videos that haven't been processed yet"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1100,
+        843.75
+      ],
+      "id": "node-loop-over-channels",
+      "name": "Loop Over Channels",
+      "notes": "Iterates through all monitored YouTube channels one by one"
+    },
+    {
+      "parameters": {
+        "url": "http://YOUR_API_HOST:PORT/youtube/channel/videos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json[\"url\"] }}"
+            },
+            {
+              "name": "limit",
+              "value": "3"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -880,
+        893.75
+      ],
+      "id": "node-get-latest-videos",
+      "name": "Get Latest Videos",
+      "notes": "Fetches 3 most recent videos from each monitored YouTube channel"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -220,
+        668.75
+      ],
+      "id": "node-loop-over-new-videos",
+      "name": "Loop Over New Videos",
+      "notes": "Iterates through all new videos to be processed one by one"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://YOUR_AGENT_HOST:PORT/agents/YOUR_AGENT_ID/knowledge",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.finalText }}\",\n  \"metadata\": {\n    \"source_type\": \"podcast\",\n    \"source_url\": \"{{ $json.url }}\",\n    \"images\": [\"{{ $json.thumbnail }}\"],\n    \"mentions\": \"{{ $json.mentions }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2660,
+        543.75
+      ],
+      "id": "node-update-agent-knowledge",
+      "name": "Update Agent Knowledge",
+      "notes": "Sends processed podcast data to ElizaOS agent knowledge base with metadata",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"title\": \"PodcastDescription\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\n      \"type\": \"string\",\n      \"description\": \"title of podcast\"\n    },\n    \"channel\": {\n      \"type\": \"string\",\n      \"description\": \"channel name from seection channel: name\"\n    },\n    \"x.com guests mentions\": {\n      \"type\": \"array\",\n      \"description\": \"list of @mentions of user profiles of guest, based on desctiption links and trasripction context\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"description\": \"description of the podcast based on the data, include such things as, name of host, guests, chapters (if they were given in the data), main topics etc\"\n    }\n  },\n  \"required\": [\"title\", \"author\", \"description\"],\n  \"additionalProperties\": false\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1512,
+        1132.5
+      ],
+      "id": "node-structured-output-parser",
+      "name": "Structured Output Parser",
+      "notes": "Defines JSON structure for AI response (title, channel, guest mentions, description)"
+    }
+  ],
+  "connections": {
+    "Get Video Transcript": {
+      "main": [
+        [
+          {
+            "node": "Clean Transcript Segments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video Description": {
+      "main": [
+        [
+          {
+            "node": "Extract Chapters from Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Chapters from Description": {
+      "main": [
+        [
+          {
+            "node": "Merge Transcript and Chapters",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Transcript and Chapters": {
+      "main": [
+        [
+          {
+            "node": "Map Chapters to Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Transcript Segments": {
+      "main": [
+        [
+          {
+            "node": "Merge Transcript and Chapters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video Metadata": {
+      "main": [
+        [
+          {
+            "node": "Merge Metadata with Content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract URL and Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Metadata with Content": {
+      "main": [
+        [
+          {
+            "node": "Combine All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Data": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Chapters to Transcript": {
+      "main": [
+        [
+          {
+            "node": "Merge Metadata with Content",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Format Text for API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract X.com Mentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract URL and Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Merge Output Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Final Data": {
+      "main": [
+        [
+          {
+            "node": "Add Recommendation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract X.com Mentions": {
+      "main": [
+        [
+          {
+            "node": "Merge Output Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Format Text for API": {
+      "main": [
+        [
+          {
+            "node": "Merge Output Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Output Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Final Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Monitor": {
+      "main": [
+        [
+          {
+            "node": "Get Monitored Channels",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Processed Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge ID Lists": {
+      "main": [
+        [
+          {
+            "node": "Filter New Videos Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract New Video IDs": {
+      "main": [
+        [
+          {
+            "node": "Merge ID Lists",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Monitored Channels": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Channels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Processed IDs": {
+      "main": [
+        [
+          {
+            "node": "Merge ID Lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Processed Videos": {
+      "main": [
+        [
+          {
+            "node": "Extract Processed IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Videos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over New Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Recommendation Context": {
+      "main": [
+        [
+          {
+            "node": "Update Agent Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Auto-fix AI Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fix AI Response": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate AI Summary",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Videos Only": {
+      "main": [
+        [
+          {
+            "node": "Loop Over New Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Channels": {
+      "main": [
+        [
+          {
+            "node": "Extract New Video IDs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Latest Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest Videos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Channels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over New Videos": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Save Processed Video ID",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Video Metadata",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Video Transcript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Video Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Agent Knowledge": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fix AI Response",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "PORTFOLIO_VERSION_ID",
+  "triggerCount": 0,
+  "tags": []
+}

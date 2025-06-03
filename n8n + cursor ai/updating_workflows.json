@@ -1,0 +1,206 @@
+{
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "id": "updating-workflows",
+  "name": "updating workflows",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerOn": "folder",
+        "path": "/path/to/your/n8n/directory",
+        "events": [
+          "change",
+          "add"
+        ],
+        "options": {
+          "usePolling": true
+        }
+      },
+      "type": "n8n-nodes-base.localFileTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -200
+      ],
+      "id": "node-watch-file-changes",
+      "name": "Watch for File Changes",
+      "notes": "Monitors the n8n directory for any file changes or additions. Triggers when JSON workflow files are modified."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-condition-1",
+              "leftValue": "={{ $json.path }}",
+              "rightValue": ".json",
+              "operator": {
+                "type": "string",
+                "operation": "endsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        -200
+      ],
+      "id": "node-filter-json-files",
+      "name": "Filter JSON Files Only",
+      "notes": "Only allows JSON files to pass through, filtering out all other file types."
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{$json[\"path\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -200
+      ],
+      "id": "node-read-modified-file",
+      "name": "Read Modified File",
+      "alwaysOutputData": true,
+      "notes": "Reads the content of the modified file from disk to process the workflow data."
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -200
+      ],
+      "id": "node-parse-json-content",
+      "name": "Parse JSON Content",
+      "notes": "Extracts and parses JSON data from the file content to prepare for workflow update."
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.baseUrl }}/workflows/{{ $json.workflowId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        -200
+      ],
+      "id": "node-update-workflow-api",
+      "name": "Update Workflow via API",
+      "credentials": {
+        "n8nApi": {
+          "id": "YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n account"
+        }
+      },
+      "notes": "Sends a PUT request to the n8n API to update the workflow with the new configuration from the JSON file."
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n *  Builds payload for PUT /workflows/:id\n *  ───────────────────────────────────────\n *  Expected structure:\n *  items = [\n *    {\n *      json: {\n *        data: { …full workflow… },\n *        baseUrl:    'http://localhost:5678/api/v1',   // (optional)\n *        workflowId: 'workflow-id',                    // (optional)\n *        apiKey:     'xxxxx',                          // (optional)\n *      }\n *    },\n *    …\n *  ]\n */\n\nreturn items.map(item => {\n\t// 1. workflow comes in data field\n\tconst wf          = item.json.data;\n\n\t// 2. Configuration (fallbacks if fields are missing)\n\tconst baseUrl     = item.json.baseUrl    || 'http://YOUR_N8N_HOST:PORT/api/v1';\n\tconst workflowId  = item.json.workflowId || wf.id || '';\n\tconst apiKey      = item.json.apiKey     || '';\n\n\t// 3. Ensure settings has minimum required fields\n\tconst settings = {\n\t\ttimezone:       (wf.settings && wf.settings.timezone)       || 'Europe/Warsaw',\n\t\texecutionOrder: (wf.settings && wf.settings.executionOrder) || 'v1',\n\t\t...wf.settings,          // preserve everything that was already there\n\t};\n\n\t// 4. Build body according to API specification\n\tconst body = {\n\t\tname:        wf.name        || 'workflow',\n\t\tnodes:       wf.nodes       || [],\n\t\tconnections: wf.connections || {},\n\t\tsettings,\n\t};\n\n\treturn {\n\t\tjson: {\n\t\t\tbaseUrl,\n\t\t\tworkflowId,\n\t\t\tapiKey,\n\t\t\tbody,\n\t\t},\n\t};\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -200
+      ],
+      "id": "node-prepare-api-payload",
+      "name": "Prepare API Payload",
+      "notes": "Transforms the workflow JSON data into the proper format required by the n8n API for updating workflows."
+    }
+  ],
+  "connections": {
+    "Watch for File Changes": {
+      "main": [
+        [
+          {
+            "node": "Filter JSON Files Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter JSON Files Only": {
+      "main": [
+        [
+          {
+            "node": "Read Modified File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Modified File": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare API Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare API Payload": {
+      "main": [
+        [
+          {
+            "node": "Update Workflow via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "DEMO_VERSION_ID",
+  "triggerCount": 1,
+  "tags": []
+}
