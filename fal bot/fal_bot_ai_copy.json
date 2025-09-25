@@ -1,0 +1,1364 @@
+{
+  "createdAt": "2025-09-24T15:32:13.384Z",
+  "updatedAt": "2025-09-24T15:32:13.384Z",
+  "id": "V68U9eLULEmG56nl",
+  "name": "fal bot ai copy",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "userIds": "1951630053,329703279"
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1540,
+        940
+      ],
+      "id": "de896080-785e-4c42-9cd2-c219ae6ba7ab",
+      "name": "Telegram Trigger",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notStartsWith"
+                    },
+                    "id": "435a7066-afcd-4e42-a1b1-1dbf1b95421a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cf333853-8526-4f1c-a6cb-ac04bef37f28",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2265b9a4-7809-4968-9a94-05a6d874c618",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/info",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2824ea9a-63f2-4bc9-82df-04a1db627fa5",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/reset",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fdb83f0d-fc69-41f9-89f7-b0cc4729c159",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/lora",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1f5f9383-445e-4037-8fd8-6031f36fc3e6",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "04cdcd61-b972-4c6c-8dd6-d69e8375eb7d",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a4ebbb65-87dd-4d40-80ea-fce017aa5d83",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/s",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "={{ false }}"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "92efb125-0d9f-4179-b204-179ffdb287b5",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/a",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1320,
+        820
+      ],
+      "id": "b6312f52-3042-46f2-94d0-df476ead1c31",
+      "name": "Switch",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/flux/requests/{{ $json.request_id }}/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "49bd95da-48ed-4970-8a63-cd5d4218b256",
+      "name": "Fetch Status1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        600,
+        240
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0YZYEITxlIPXdeNi",
+          "name": "fal.ai"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "7248f3ed-1243-4b45-8658-a6495ca72594",
+      "name": "Wait1",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1040,
+        340
+      ],
+      "typeVersion": 1.1,
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ac50759b-e2f3-4efd-a2af-f28b7d209b45",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "COMPLETED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "404222d5-de82-48fc-a536-04385bc21731",
+      "name": "Is Ready?1",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        820,
+        180
+      ],
+      "typeVersion": 2.2,
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/flux/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "451270ac-4bde-4a55-8d00-e792d49049de",
+      "name": "Fetch Status2",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1040,
+        120
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0YZYEITxlIPXdeNi",
+          "name": "fal.ai"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/flux-lora",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"prompt\": \"{{ $('Prompt Mapping').item.json.prompt }}\",\n    \"loras\": {{ $json.loras.toJsonString() }},\n    \"image_size\": \"{{ $json.image_size }}\",\n    \"num_inference_steps\": {{ $json.num_inference_steps }},\n    \"guidance_scale\": {{ $json.guidance_scale }},\n    \"sync_mode\": false,\n    \"enable_safety_checker\": false\n  }\n\n",
+        "options": {}
+      },
+      "id": "7316f674-2789-4618-a021-eae95f9eb712",
+      "name": "FAL LoRA Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        380,
+        240
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0YZYEITxlIPXdeNi",
+          "name": "fal.ai"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Function / Code node – Run Once for Each Item\nconst allowedSizes = [\n\t'square_hd',\n\t'square',\n\t'portrait_4_3',\n\t'portrait_16_9',\n\t'landscape_4_3',\n\t'landscape_16_9',\n];\n\nreturn items.map(item => {\n\t// 1. Get message text\n\tconst text = item.json.message?.text ?? '';\n\n\t// 2. Prepare output variables\n\tlet prompt = text.trim();\n\tlet image_size = '';\n\tlet num_inference_steps = '';\n\tlet guidance_scale = '';\n\n\t/* 3. Find flags in the form:\n\t *    -i <value>  -s <value>  -g <value>\n\t *    where a whitespace (or start of string) precedes the dash\n\t */\n\tconst flagRegex = /(?:^|\\s)-(\\w)\\s+([^\\s]+)/g;\n\tconst flags = [];\n\tlet match;\n\twhile ((match = flagRegex.exec(text)) !== null) {\n\t\tflags.push({ flag: match[1], value: match[2] });\n\t}\n\n\t// 4. If flags were found, trim the prompt up to the first flag\n\tif (flags.length) {\n\t\tconst firstFlagIndex = text.search(/\\s-\\w/);\n\t\tprompt = text.slice(0, firstFlagIndex).trim();\n\t}\n\n\t// 5. Process flags\n\tfor (const { flag, value } of flags) {\n\t\tswitch (flag) {\n\t\t\tcase 'i': // -- image size\n\t\t\t\timage_size = allowedSizes.includes(value)\n\t\t\t\t\t? value\n\t\t\t\t\t: `Error: invalid -i value (${value})`;\n\t\t\t\tbreak;\n\n\t\t\tcase 's': // -- steps\n\t\t\t\tconst steps = Number(value);\n\t\t\t\tnum_inference_steps = (!Number.isNaN(steps) && steps <= 50)\n\t\t\t\t\t? steps\n\t\t\t\t\t: `Error: -s exceeds 50 (${value})`;\n\t\t\t\tbreak;\n\n\t\t\tcase 'g': // -- guidance scale\n\t\t\t\tconst scale = Number(value);\n\t\t\t\tguidance_scale = (!Number.isNaN(scale) && scale <= 10)\n\t\t\t\t\t? scale\n\t\t\t\t\t: `Error: -g exceeds 10 (${value})`;\n\t\t\t\tbreak;\n\t\t}\n\t}\n\n\t// 6. Return the result in the format required by n8n\n\treturn {\n\t\tjson: {\n\t\t\tprompt,\n\t\t\timage_size,\n\t\t\tnum_inference_steps,\n\t\t\tguidance_scale,\n\t\t},\n\t};\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        140
+      ],
+      "id": "cdfd804e-886d-4609-a034-dba85f2c5898",
+      "name": "Prompt Mapping",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node: \"Update generation settings (staticData)\"\n\n// 1. Input (current item)\nconst current = $json;\n\n// 2. Global static data\nconst store = $getWorkflowStaticData('global');\n\n// 3. Initialize on first run\nstore.image_size          = store.image_size          ?? 'square_hd';\nstore.num_inference_steps = store.num_inference_steps ?? 10;\nstore.guidance_scale      = store.guidance_scale      ?? 7.5;\n\n// 4. Update if new values were provided in the item\nif (current.image_size)          store.image_size          = current.image_size;\nif (current.num_inference_steps) store.num_inference_steps = current.num_inference_steps;\nif (current.guidance_scale)      store.guidance_scale      = current.guidance_scale;\n\n// 5. Return unchanged input so downstream nodes can use it\nreturn [{ json: current }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        240
+      ],
+      "id": "6a7472e0-8c23-4019-a9f4-e76c318ccad4",
+      "name": "Update Static Data",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\nconst staticData = $getWorkflowStaticData('global');\n\n// Clone to avoid returning a reference\nconst outputData = JSON.parse(JSON.stringify(staticData));\n\nreturn [\n\t{\n\t\tjson: outputData,\n\t},\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -60,
+        240
+      ],
+      "id": "e5e551b8-fe4d-4d58-9caa-08e3ab73d177",
+      "name": "Read Static Data",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\nconst staticData = $getWorkflowStaticData('global');\n\n// Clone to avoid returning a reference\nconst outputData = JSON.parse(JSON.stringify(staticData));\n\nreturn [\n\t{\n\t\tjson: outputData,\n\t},\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        540
+      ],
+      "id": "d6f29ff5-8046-4209-b133-513a87f1ed0c",
+      "name": "Read Static Data 1",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Image generation\n description - parameters\n\nExample\n  -i square_hd -s 40 -g 7\n\nOptional parameters\n -i  image size: square_hd, square, portrait_4_3, portrait_16_9, landscape_4_3, landscape_16_9\n -s  steps (1–50)\n -g  guidance (0.1–10)\n\nCommands\n /info            current settings\n /lora            list styles (LoRA)\n /a name          toggle style\n /s name x        change style scale\n /add name url    add style\n /delete name     delete style\n /reset           restore default styles\n /help            help       ",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -940,
+        340
+      ],
+      "id": "17fff837-f572-41eb-b1ba-9b111095ff12",
+      "name": "/help msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -500,
+        540
+      ],
+      "id": "5aef6bdd-c721-4f62-ae53-119b68425bec",
+      "name": "/info msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "file": "={{ $json.images[0].url }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1260,
+        120
+      ],
+      "id": "c9b7ca55-11f3-4ab9-b469-59dd2d7f7825",
+      "name": "Image Message",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "adc5f3ff-8f05-4b0f-819d-9e0e91a1f140",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "Error:",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -500,
+        140
+      ],
+      "id": "e7c74019-53e9-4ae8-9f7c-1596b12a7b19",
+      "name": "Has Errors?",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.error.values() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -280,
+        40
+      ],
+      "id": "8adafcbf-0d9b-4b33-a442-1cd24d35fc0f",
+      "name": "Error Message",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst result = items.map(item => {\n  const errors = {};\n\n  for (const [key, value] of Object.entries(item.json)) {\n    if (typeof value === 'string' && value.startsWith('Error:')) {\n      errors[key] = value;\n    }\n  }\n\n  // Add error object (may be empty)\n  item.json.error = errors;\n  return item;\n});\n\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        140
+      ],
+      "id": "db1b79e2-88e8-4339-961b-a4698ac39d46",
+      "name": "Collect Errors",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node: reset LORA list\nconst staticData = $getWorkflowStaticData('global');\n\nstaticData.loras = [\n  {\n    name: 'model1',\n    path: 'https://storage.googleapis.com/fal-flux-lora/64d7dd0a4ae944acb13fedc65ac324ba_pytorch_lora_weights.safetensors',\n    scale: 1.0,\n    active: true,\n  },\n  {\n    name: 'iphone',\n    path: 'https://huggingface.co/KngGlobal/iphone-lora/blob/main/iphone-photo-V1-final.safetensors',\n    scale: 0.9,\n    active: true,\n  },\n  {\n    name: 'antiblur',\n    path: 'https://huggingface.co/KngGlobal/anti-blur-lora/blob/main/AntiBlur.safetensors',\n    scale: 0.7,\n    active: true,\n  },\n];\n\nreturn [{ json: { status: 'reset ok', count: staticData.loras.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        740
+      ],
+      "id": "9a6926d9-d69f-422d-8a29-d1c5e3ccaa16",
+      "name": "Initialize LoRA",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\nconst staticData = $getWorkflowStaticData('global');\n\n// Clone to avoid returning a reference\nconst outputData = JSON.parse(JSON.stringify(staticData));\n\nreturn [\n\t{\n\t\tjson: outputData,\n\t},\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        740
+      ],
+      "id": "b0e6cdbb-20e5-42a8-986a-601a9bedb9a3",
+      "name": "Read Static Data 2",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Assume a single input item (index 0)\n// with a `loras` field — exactly like in your example.\n\nconst { loras = [] } = $json;   // or: const loras = $input.first().json.loras;\n\nreturn loras.map(lora => ({\n  json: {\n    name:   lora.name,\n    scale:  lora.scale,\n    active: lora.active,\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        740
+      ],
+      "id": "8d24a31a-a222-46bf-95fd-d182e003bfbe",
+      "name": "List LoRA Items",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: list of objects with \"loras\", each having \"name\", \"path\", \"scale\", \"active\"\nconst input = items[0].json;\n\n// Filter only active loras and drop 'name' and 'active' fields\nconst filteredLoras = (input.loras || [])\n  .filter(l => l.active === true)\n  .map(({ path, scale }) => ({ path, scale }));\n\n// Return data in the same format as input, but with updated \"loras\"\nreturn [\n  {\n    json: {\n      ...input,\n      loras: filteredLoras,\n    }\n  }\n];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        240
+      ],
+      "id": "449e4b01-6258-4e3a-91b1-70376c99fa50",
+      "name": "Active LoRA Only",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\n\nlet msg = `Configuration \\n\\n`;\nmsg += `image size: ${input.image_size}\\n`;\nmsg += `steps: ${input.num_inference_steps}\\n`;\nmsg += `guidance: ${input.guidance_scale}\\n\\n`;\n\nmsg += `loras:\\n`;\n\nconst activeLoras = (input.loras || []).filter(lora => lora.active === true);\n\nif (activeLoras.length === 0) {\n  msg += `No active entries.\\n`;\n} else {\n  activeLoras.forEach(lora => {\n    msg += `${lora.name} - ${lora.scale}\\n`;\n  });\n}\n\nreturn [\n  {\n    json: {\n      msg\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        540
+      ],
+      "id": "04dee79d-e2ac-42dd-9679-6f421c7fbee8",
+      "name": "Report",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.values() }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -280,
+        740
+      ],
+      "id": "79fa0ed7-2a33-4b78-ad85-189c79e7b38d",
+      "name": "/reset msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\nconst staticData = $getWorkflowStaticData('global');\n\n// Clone to avoid returning a reference\nconst outputData = JSON.parse(JSON.stringify(staticData));\n\nreturn [\n\t{\n\t\tjson: outputData,\n\t},\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        940
+      ],
+      "id": "1dfdd41f-0a13-484e-bc52-278396bfd281",
+      "name": "Read Static Data 3",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -500,
+        940
+      ],
+      "id": "7235c1b2-476d-4711-baad-8adec5e7bcce",
+      "name": "/lora msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\n\nlet msg = `active name - scale:\\n\\n`;\n\n(input.loras || []).forEach(lora => {\n  const status = lora.active ? '🟢' : '🔘';\n  msg += `${status} ${lora.name} - ${lora.scale}\\n`;\n  msg += `${lora.path}\\n\\n`;\n});\n\nreturn [\n  {\n    json: {\n      msg\n    }\n  }\n];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        940
+      ],
+      "id": "de3593dd-7abc-4c8f-b3ba-130e8337e41e",
+      "name": "Format LoRA List",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Read message text and extract the name after /delete\nconst text = items[0].json?.message?.text ?? '';\nconst [, ...rest] = text.trim().split(/\\s+/);   // skip \"/delete\", collect the rest\nconst targetName = rest.join(' ').toLowerCase(); // e.g. \"iphone\"\n\nif (!targetName) {\n  return [\n    {\n      json: {\n        msg: '❌ No LoRA name provided to delete.'\n      }\n    }\n  ];\n}\n\n// 2. Get or initialize global staticData\nconst staticData = $getWorkflowStaticData('global');\nstaticData.loras = staticData.loras || [];       // ensure it's an array\n\n// 3. Find LoRA by name (case-insensitive)\nconst index = staticData.loras.findIndex(\n  l => (l.name || '').toLowerCase() === targetName\n);\n\nlet msg;\n\nif (index !== -1) {\n  // 4a. Found — remove and confirm\n  const removed = staticData.loras.splice(index, 1)[0]; // removed object\n  msg = `✅ Deleted LoRA: ${removed.name}`;\n} else {\n  // 4b. Not found — inform user\n  msg = `❌ No LoRA found with name: ${targetName}`;\n}\n\n// 5. Return result\nreturn [\n  {\n    json: {\n      msg\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        1140
+      ],
+      "id": "633970c6-f614-4a06-85a9-f1a8a3dd77d5",
+      "name": "Delete LoRA",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        1140
+      ],
+      "id": "fd4e47d3-46a6-4137-9789-dd5edd744f7c",
+      "name": "/delete msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Extract message text\nconst text = items[0].json?.message?.text ?? '';\nconst parts = text.trim().split(/\\s+/);   // [\"/add\", \"iphone\", \"https://...\"]\n\n// Validate number of arguments\nif (parts.length < 3) {\n  return [\n    {\n      json: {\n        msg: '❌ Usage: /add <name> <url>'\n      }\n    }\n  ];\n}\n\n// 2. Separate name and path (URL may contain spaces, so join the rest)\nconst name = parts[1];\nconst path = parts.slice(2).join(' ');\n\n// 3. Get / initialize global staticData\nconst staticData = $getWorkflowStaticData('global');\nstaticData.loras = staticData.loras || [];   // loras array; create if missing\n\n// 4. Check if a LoRA with this name exists (case-insensitive)\nconst exists = staticData.loras.some(\n  l => (l.name || '').toLowerCase() === name.toLowerCase()\n);\n\nlet msg;\n\nif (exists) {\n  // Duplicate — do not add\n  msg = `❌ A LoRA named \"${name}\" already exists.`;\n} else {\n  // 5. Add new LoRA with default parameters\n  staticData.loras.push({\n    name,\n    path,\n    scale: 1,      // default scale\n    active: true   // active by default\n  });\n  msg = `✅ Added LoRA \"${name}\"`;\n}\n\n// 6. Return result\nreturn [\n  {\n    json: { msg }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        1340
+      ],
+      "id": "3f5fe239-cdcc-45ba-bade-cf97130821d6",
+      "name": "Add LoRA",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        1340
+      ],
+      "id": "e5cd9754-b1a1-41d3-9d51-82fb2017ae6b",
+      "name": "/add msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Parse message\nconst text   = items[0].json?.message?.text ?? '';\nconst parts  = text.trim().split(/\\s+/);   // [\"/s\", \"model1\", \"1.7\"]\n\nif (parts.length < 3) {\n  return [{ json: { msg: '❌ Usage: /s <name> <scale>' } }];\n}\n\nconst name      = parts[1];\nconst scaleStr  = parts[2].replace(',', '.');      // allow comma\nconst newScale  = parseFloat(scaleStr);\n\nif (isNaN(newScale) || newScale <= 0) {\n  return [{ json: { msg: '❌ Invalid scale value.' } }];\n}\n\n// 2. Get / initialize global staticData\nconst staticData  = $getWorkflowStaticData('global');\nstaticData.loras  = staticData.loras || [];\n\n// 3. Find LoRA by name (case-insensitive)\nconst lora = staticData.loras.find(\n  l => (l.name || '').toLowerCase() === name.toLowerCase()\n);\n\nlet msg;\n\nif (!lora) {\n  // No LoRA with given name\n  msg = `❌ No LoRA found named \"${name}\"`;\n} else {\n  // 4. Update scale\n  lora.scale = newScale;\n  msg = `✅ Changed scale of LoRA \"${lora.name}\" to ${newScale}`;\n}\n\n// 5. Return message\nreturn [{ json: { msg } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        1540
+      ],
+      "id": "1c8ac2b7-2e61-4a2d-9b7f-618343a864d1",
+      "name": "Change Scale",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        1540
+      ],
+      "id": "4a6380a7-7fef-4d5e-a9e5-dfdfe90b3add",
+      "name": "/s msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Parse message\nconst text  = items[0].json?.message?.text ?? '';\nconst parts = text.trim().split(/\\s+/);   // [\"/a\", \"model1\"]\n\nif (parts.length < 2) {\n  return [{ json: { msg: '❌ Usage: /a <name>' } }];\n}\n\nconst name = parts[1];\n\n// 2. Get / initialize global staticData\nconst staticData = $getWorkflowStaticData('global');\nstaticData.loras = staticData.loras || [];\n\n// 3. Find LoRA (case-insensitive)\nconst lora = staticData.loras.find(\n  l => (l.name || '').toLowerCase() === name.toLowerCase()\n);\n\nlet msg;\n\nif (!lora) {\n  msg = `❌ No LoRA found named \"${name}\"`;\n} else {\n  // 4. Toggle active\n  lora.active = !lora.active;\n  const statusEmoji = lora.active ? '🟢' : '🔘';\n  const statusTxt   = lora.active ? 'active' : 'inactive';\n  msg = `✅ ${statusEmoji} LoRA \"${lora.name}\" is now ${statusTxt}`;\n}\n\n// 5. Return message\nreturn [{ json: { msg } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -940,
+        1740
+      ],
+      "id": "f21fda5a-c389-4d40-aaf2-4ad7ac53fce7",
+      "name": "Toggle Active",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        1740
+      ],
+      "id": "08f107f5-ec4c-48b3-86f3-26399abcd227",
+      "name": "/a msg",
+      "credentials": {
+        "telegramApi": {
+          "id": "vIYoOxk6OjdSDvh8",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Prompt Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "/help msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Static Data 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Initialize LoRA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Static Data 3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete LoRA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add LoRA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Change Scale",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Toggle Active",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Status1": {
+      "main": [
+        [
+          {
+            "node": "Is Ready?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Ready?1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Status2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Status2": {
+      "main": [
+        [
+          {
+            "node": "Image Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAL LoRA Request": {
+      "main": [
+        [
+          {
+            "node": "Fetch Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Mapping": {
+      "main": [
+        [
+          {
+            "node": "Collect Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Static Data": {
+      "main": [
+        [
+          {
+            "node": "Read Static Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Static Data": {
+      "main": [
+        [
+          {
+            "node": "Active LoRA Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Static Data 1": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Errors?": {
+      "main": [
+        [
+          {
+            "node": "Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Static Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Errors": {
+      "main": [
+        [
+          {
+            "node": "Has Errors?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize LoRA": {
+      "main": [
+        [
+          {
+            "node": "Read Static Data 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Static Data 2": {
+      "main": [
+        [
+          {
+            "node": "List LoRA Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List LoRA Items": {
+      "main": [
+        [
+          {
+            "node": "/reset msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Active LoRA Only": {
+      "main": [
+        [
+          {
+            "node": "FAL LoRA Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report": {
+      "main": [
+        [
+          {
+            "node": "/info msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Static Data 3": {
+      "main": [
+        [
+          {
+            "node": "Format LoRA List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format LoRA List": {
+      "main": [
+        [
+          {
+            "node": "/lora msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete LoRA": {
+      "main": [
+        [
+          {
+            "node": "/delete msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add LoRA": {
+      "main": [
+        [
+          {
+            "node": "/add msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Change Scale": {
+      "main": [
+        [
+          {
+            "node": "/s msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Toggle Active": {
+      "main": [
+        [
+          {
+            "node": "/a msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Read Static Data 1": [
+      {
+        "json": {
+          "image_size": "square",
+          "num_inference_steps": 10,
+          "guidance_scale": 1.2,
+          "loras": [
+            {
+              "name": "model1",
+              "path": "https://storage.googleapis.com/fal-flux-lora/64d7dd0a4ae944acb13fedc65ac324ba_pytorch_lora_weights.safetensors",
+              "scale": 1,
+              "active": true
+            },
+            {
+              "name": "model2",
+              "path": "https://huggingface.co/KngGlobal/iphone-lora/blob/main/iphone-photo-V1-final.safetensors",
+              "scale": 0.9,
+              "active": true
+            },
+            {
+              "name": "model3",
+              "path": "https://huggingface.co/KngGlobal/anti-blur-lora/blob/main/AntiBlur.safetensors",
+              "scale": 0.7,
+              "active": true
+            }
+          ]
+        }
+      }
+    ],
+    "Read Static Data 2": [
+      {
+        "json": {
+          "image_size": "square",
+          "num_inference_steps": 10,
+          "guidance_scale": 1.2,
+          "loras": [
+            {
+              "name": "model1",
+              "path": "https://storage.googleapis.com/fal-flux-lora/64d7dd0a4ae944acb13fedc65ac324ba_pytorch_lora_weights.safetensors",
+              "scale": 1,
+              "active": true
+            },
+            {
+              "name": "model2",
+              "path": "https://huggingface.co/KngGlobal/iphone-lora/blob/main/iphone-photo-V1-final.safetensors",
+              "scale": 0.9,
+              "active": true
+            },
+            {
+              "name": "model3",
+              "path": "https://huggingface.co/KngGlobal/anti-blur-lora/blob/main/AntiBlur.safetensors",
+              "scale": 0.7,
+              "active": true
+            }
+          ]
+        }
+      }
+    ],
+    "Read Static Data 3": [
+      {
+        "json": {
+          "image_size": "square",
+          "num_inference_steps": 3,
+          "guidance_scale": 1.2,
+          "loras": [
+            {
+              "name": "model1",
+              "path": "https://storage.googleapis.com/fal-flux-lora/64d7dd0a4ae944acb13fedc65ac324ba_pytorch_lora_weights.safetensors",
+              "scale": 1,
+              "active": true
+            },
+            {
+              "name": "iphone",
+              "path": "https://huggingface.co/KngGlobal/iphone-lora/blob/main/iphone-photo-V1-final.safetensors",
+              "scale": 0.9,
+              "active": true
+            },
+            {
+              "name": "antiblur",
+              "path": "https://huggingface.co/KngGlobal/anti-blur-lora/blob/main/AntiBlur.safetensors",
+              "scale": 0.7,
+              "active": true
+            }
+          ]
+        }
+      }
+    ],
+    "Delete LoRA": [
+      {
+        "json": {
+          "msg": "❌ No LoRA found with name: iphone"
+        }
+      }
+    ]
+  },
+  "versionId": "f60b3e19-0d34-4dc6-930d-e9a582ad8259",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-06-22T17:31:41.037Z",
+      "updatedAt": "2025-06-22T17:31:41.037Z",
+      "id": "YuEYjo0005EmPZyH",
+      "name": "fal.ai bot"
+    }
+  ],
+  "disabled": false
+}

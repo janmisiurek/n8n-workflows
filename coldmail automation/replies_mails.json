@@ -1,0 +1,437 @@
+{
+  "createdAt": "2025-06-07T08:31:01.616Z",
+  "updatedAt": "2025-06-18T08:46:13.000Z",
+  "id": "RYOs11NOTRpEadSv",
+  "name": "replies mails",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Analyze incoming email whether it's a reply to cold email\nconst emailData = $json;\n\n// Extract data from email - actual IMAP structure\nconst fromRaw = emailData.from || '';\nconst to = emailData.to || '';\nconst subject = emailData.subject || '';\nconst textContent = emailData.textPlain || '';\nconst htmlContent = emailData.textHtml || '';\n\n// Extract email from \"from\" field (format: \"Jan Misiurek <jashoster@gmail.com>\")\nconst emailRegex = /<([^>]+)>/;\nconst emailMatch = fromRaw.match(emailRegex);\nconst from = emailMatch ? emailMatch[1] : fromRaw;\n\n// Extract name from \"from\" field \nconst nameMatch = fromRaw.match(/^([^<]+)/);\nconst senderName = nameMatch ? nameMatch[1].trim() : from.split('@')[0];\n\n// Check headers in metadata\nconst metadata = emailData.metadata || {};\nconst inReplyTo = metadata['in-reply-to'] || '';\nconst references = metadata['references'] || '';\nconst messageId = metadata['message-id'] || '';\n\nconsole.log(`📧 New email from: ${from} (${senderName})`);\nconsole.log(`📧 To: ${to}`);\nconsole.log(`📧 Subject: ${subject}`);\nconsole.log(`📧 In-Reply-To: ${inReplyTo}`);\nconsole.log(`📧 References: ${references}`);\n\n// Check if this is a reply to our cold email\nlet isReply = false;\nlet originalRecipient = '';\n\n// Method 1: Check In-Reply-To and References headers\nif (inReplyTo || references) {\n  console.log(`🔍 Found reply headers - this is probably a reply`);\n  isReply = true;\n  originalRecipient = from; // person who replies is the original recipient\n}\n\n// Method 2: Check if subject contains \"Re:\" or \"RE:\"\nif (subject.toLowerCase().includes('re:')) {\n  console.log(`🔍 Subject contains 'Re:' - this is probably a reply`);\n  isReply = true;\n  originalRecipient = from;\n}\n\n// Method 3: Check if this is not our sent email (from = kevin@startstrategus.com)\nif (from?.includes('kevin@startstrategus.com')) {\n  console.log(`⚠️ This is our own email - skipping`);\n  isReply = false;\n}\n\n// Method 4: Check if this is not an automatic system message\nif (from?.includes('noreply') || from?.includes('no-reply') || from?.includes('mailer-daemon')) {\n  console.log(`⚠️ This is an automatic system message - skipping`);\n  isReply = false;\n}\n\n// Extract actual reply content (remove quoted text)\nlet replyContent = textContent;\nif (textContent) {\n  // Remove quoted text (lines starting with \">\")\n  const lines = textContent.split('\\n');\n  const replyLines = [];\n  let inQuote = false;\n  \n  for (const line of lines) {\n    // If line starts with \">\" or contains \"napisał(a):\" then we start quote\n    if (line.trim().startsWith('>') || line.includes('napisał(a):') || line.includes('wrote:')) {\n      inQuote = true;\n      continue;\n    }\n    \n    // If we're not in quote, add line\n    if (!inQuote && line.trim()) {\n      replyLines.push(line.trim());\n    }\n  }\n  \n  replyContent = replyLines.join(' ').trim();\n}\n\n// If it's a reply, prepare data\nif (isReply && originalRecipient) {\n  console.log(`✅ Confirmed reply from: ${originalRecipient}`);\n  console.log(`📝 Reply content: ${replyContent.substring(0, 100)}...`);\n  \n  return {\n    json: {\n      ...emailData,\n      isReply: true,\n      originalRecipient: originalRecipient,\n      replyFrom: from,\n      replyFromName: senderName,\n      replyTo: to,\n      replySubject: subject,\n      replyContent: replyContent,\n      replyContentFull: textContent,\n      receivedAt: new Date().toISOString(),\n      searchEmail: originalRecipient, // email to search in sheet\n      inReplyTo: inReplyTo,\n      references: references,\n      messageId: messageId\n    }\n  };\n} else {\n  console.log(`❌ This is not a reply to cold email - skipping`);\n  // Return null to stop workflow for this email\n  return null;\n}"
+      },
+      "id": "analyze-reply",
+      "name": "Analyze Reply Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        100
+      ],
+      "alwaysOutputData": false,
+      "notes": "Analyzes whether incoming email is a reply to our cold email (checks headers, subject, sender). Extracts clean reply content.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "reply-check",
+              "leftValue": "={{ $json.isReply }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            },
+            {
+              "id": "467b13c2-dd6c-42f6-8b43-7ffebb0f0e30",
+              "leftValue": "={{ $json.isReply }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "check-if-reply",
+      "name": "Check If Reply",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        100
+      ],
+      "notes": "Checks if this is actually a reply to cold email before continuing.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $json.searchEmail }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "lookup-lead",
+      "name": "Lookup Lead in Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        20
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Searches for lead in Google Sheets by email address.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lead-found",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-lead-found",
+      "name": "Check Lead Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        20
+      ],
+      "notes": "Checks if lead was found in sheet before updating.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "replied",
+            "lastSent": "={{ $json.lastSent }}",
+            "campaign": "={{ $json.campaign }}_REPLIED",
+            "email": "={{ $json.email }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site",
+              "displayName": "site",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lastSent",
+              "displayName": "lastSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateAdded",
+              "displayName": "dateAdded",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "update-reply-status",
+      "name": "Update Reply Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        900,
+        -60
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Updates lead status to 'replied' when we receive a response.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare data for reply notification\nconst leadData = $('Lookup Lead in Sheet').first().json;\nconst replyData = $('Analyze Reply Email').first().json;\n\n// Lead data\nconst leadEmail = leadData.email;\nconst leadSite = leadData.site;\nconst leadStatus = leadData.status;\nconst leadCampaign = leadData.campaign;\n\n// Reply data\nconst replyFrom = replyData.replyFrom;\nconst replySubject = replyData.replySubject;\nconst replyContent = replyData.replyContent?.substring(0, 500) || 'No content'; // First 500 characters\nconst receivedAt = replyData.receivedAt;\n\n// Prepare notification\nconst notificationSubject = `🎉 NEW REPLY: ${replyFrom}`;\n\nconst notificationBody = `\n🎯 RECEIVED REPLY TO COLD EMAIL!\n\n📊 LEAD DATA:\n• Email: ${leadEmail}\n• Website: ${leadSite}\n• Previous status: ${leadStatus}\n• Campaign: ${leadCampaign}\n\n📧 REPLY DETAILS:\n• From: ${replyFrom}\n• Subject: ${replySubject}\n• Received: ${receivedAt}\n\n📝 REPLY CONTENT:\n${replyContent}\n\n✅ STATUS UPDATED TO: \"replied\"\n\n🔗 Sheet link: https://docs.google.com/spreadsheets/d/1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ\n\n---\nNotification generated automatically by n8n Reply Monitor\n`;\n\nreturn {\n  json: {\n    ...leadData,\n    ...replyData,\n    notificationSubject: notificationSubject,\n    notificationBody: notificationBody,\n    leadEmail: leadEmail,\n    replyEmail: replyFrom\n  }\n};"
+      },
+      "id": "prepare-notification",
+      "name": "Prepare Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -60
+      ],
+      "notes": "Prepares detailed notification about received reply to cold email.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "fromEmail": "kevin@startstrategus.com",
+        "toEmail": "jan.misiurek@gmail.com",
+        "subject": "={{ $json.notificationSubject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.textPlain }}",
+        "options": {}
+      },
+      "id": "send-reply-notification",
+      "name": "Send Reply Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1340,
+        -60
+      ],
+      "webhookId": "4255fe6d-1815-4732-a6c8-f791c900421f",
+      "credentials": {
+        "smtp": {
+          "id": "Z6GpQyrSCzwprROi",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Sends email notification about received reply to owner's address.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        100
+      ],
+      "id": "f5c636cd-d6eb-4670-b924-e84575c37f17",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "KrngEX1wzQ9WGQrH",
+          "name": "IMAP account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Analyze Reply Email": {
+      "main": [
+        [
+          {
+            "node": "Check If Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Reply": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead in Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead in Sheet": {
+      "main": [
+        [
+          {
+            "node": "Check Lead Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Lead Found": {
+      "main": [
+        [
+          {
+            "node": "Update Reply Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Reply Status": {
+      "main": [
+        [
+          {
+            "node": "Prepare Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Reply Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "Analyze Reply Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Email Trigger (IMAP)": {
+      "lastMessageUid": 3
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "72ece797-eb34-4dee-9cf2-ab0526724961",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "createdAt": "2025-06-06T18:50:19.746Z",
+      "updatedAt": "2025-06-06T18:50:19.746Z",
+      "id": "3Gnv1LN4Hfr2dNxa",
+      "name": "coldmail"
+    }
+  ],
+  "disabled": false
+}

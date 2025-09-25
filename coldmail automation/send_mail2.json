@@ -1,0 +1,540 @@
+{
+  "createdAt": "2025-06-25T07:43:43.852Z",
+  "updatedAt": "2025-06-25T09:51:32.000Z",
+  "id": "3FyimiBYXBC43DIo",
+  "name": "send mail2 v2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "f5d80df8-4b84-4ace-810c-5caa0e13a557",
+      "name": "Schedule Follow-up Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -200,
+        40
+      ],
+      "notes": "Triggers follow-up checking every 6 hours. Can adjust frequency as needed.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "sent1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6c3b8201-d0b7-4d54-b572-f7afe2587fdb",
+      "name": "Read Sent1 Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        -60
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Fetches all leads with 'sent1' status who have received the first email.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check which leads are ready for follow-up (after 3 days)\nconst items = $input.all();\nconst readyForFollowup = [];\nconst threeDaysInMs = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds\n\nfor (const item of items) {\n  const lead = item.json;\n  \n  // Check lastSent timestamp\n  if (!lead.lastSent) {\n    console.log(`No lastSent for ${lead.email}, skipping`);\n    continue;\n  }\n  \n  const lastSentDate = new Date(lead.lastSent);\n  const now = new Date();\n  const timeDiff = now - lastSentDate;\n  \n  // Check if 3 days have passed\n  if (timeDiff >= threeDaysInMs) {\n    console.log(`Lead ${lead.email} ready for follow-up (${Math.floor(timeDiff / (24*60*60*1000))} days since sent)`);\n    readyForFollowup.push(item);\n  } else {\n    const daysRemaining = Math.ceil((threeDaysInMs - timeDiff) / (24*60*60*1000));\n    console.log(`Lead ${lead.email} not ready - ${daysRemaining} days remaining`);\n  }\n}\n\nconsole.log(`Found ${readyForFollowup.length} leads ready for follow-up out of ${items.length} checked`);\nreturn readyForFollowup;"
+      },
+      "id": "0cd30d18-a90f-40c5-840c-aaedd793d932",
+      "name": "Check 3-Day Timer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -60
+      ],
+      "alwaysOutputData": true,
+      "notes": "Checks which leads are ready for follow-up - whether 3 days have passed since the first email.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ca879f8a-2739-40b6-bb0a-5c85396a8a0d",
+      "name": "Split Follow-up Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        720,
+        -80
+      ],
+      "notes": "Splits follow-ups into smaller batches of 5 for controlled sending.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "fromEmail": "kevin@startstrategus.com",
+        "toEmail": "={{ $json.output.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "html": "={{ $json.output.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d25f73bb-280c-4828-a861-eed3b8ac98e2",
+      "name": "Send Follow-up Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        -140
+      ],
+      "webhookId": "b33428a1-458e-4351-8b87-8383e7ed5d9f",
+      "credentials": {
+        "smtp": {
+          "id": "Z6GpQyrSCzwprROi",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Sends follow-up email through Mailcheap SMTP account.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "sent2",
+            "lastSent": "={{ $now }}",
+            "campaign": "cold_email_followup1",
+            "email": "={{ $json.accepted[0] }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site",
+              "displayName": "site",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lastSent",
+              "displayName": "lastSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateAdded",
+              "displayName": "dateAdded",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ef44a399-7479-4613-8b8f-63680d78d688",
+      "name": "Update Status to Sent2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1540,
+        -140
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Updates lead status to 'sent2' with new timestamp after sending follow-up.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "e8b98af2-0383-4ab0-82e3-e5125af3899c",
+      "name": "Wait Between Batches",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1740,
+        -20
+      ],
+      "webhookId": "d4154e89-f02c-4f2c-b214-b593da76a5f1",
+      "notes": "30-second pause between follow-up batches for SMTP stability.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {},
+      "id": "f4c1e9b7-1021-426c-9f33-f67e9abda709",
+      "name": "Manual Follow-up Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -160
+      ],
+      "notes": "Manual trigger for testing follow-up workflow.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e969633c-b0ad-457c-84bb-65a0147406d3",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        -60
+      ],
+      "id": "53b10401-74f8-4516-b22c-f877fa0b3d1e",
+      "name": "If",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"email\": \"thebest@mail.com\",\n\t\"subject\": \"personalized subject\",\n    \"body\": \"personalized body\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1140,
+        -20
+      ],
+      "id": "91c3d30c-c29c-4d80-82d2-ec448fe07577",
+      "name": "Structured Output Parser",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=emailCandidates: {{ $json.email }}\n\nsiteContent: {{ $json.siteContent }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "### ROLE\nYou are an AI automation follow-up specialist. Writing on behalf of Kevin Guldager.\n\n### TASK\nUsing the variables below:\n\n1. Pick the single most relevant contact email from ‹emailCandidates›\n   – prefer business-wide addresses (info@, hello@, contact@)\n   – else first personal-looking address\n\n2. Draft a concise and friendly follow-up email (second message), specifically:\n   • Targeting small real-estate or finance firms in the USA.\n   • Briefly reminding about your previous email, offering to help them increase revenue, reduce costs, and save valuable time using AI automation.\n   • Quickly restating capabilities (chatbots, voice agents, workflow automation, lead gen, AI support, dashboards, content creation, sales tools, finance automations).\n   • Emphasizing that you'd like to hear their specific challenges or pain points to customize the best solution for them.\n   • Using a warm, consultative tone, direct second-person \"you\".\n   • Closing with a clear, encouraging call-to-action to reply or schedule a brief call to discuss their specific needs.\n\n3. Output **only** valid JSON in this form:\n\n```json\n{\n  \"email\": \"<chosen email>\",\n  \"subject\": \"<max 60 chars follow-up style>\",\n  \"body\": \"<150-200 word friendly follow-up message>\"\n}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        960,
+        -180
+      ],
+      "id": "7ff93c30-315f-4701-b99e-651012eddc11",
+      "name": "Prepare Follow-up Email",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -20
+      ],
+      "id": "a146a6ea-7f39-4984-9b18-e228cf52b912",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "e7nJtMfWteAoFgZc",
+          "name": "Azure Open AI account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Schedule Follow-up Check": {
+      "main": [
+        [
+          {
+            "node": "Read Sent1 Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sent1 Leads": {
+      "main": [
+        [
+          {
+            "node": "Check 3-Day Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check 3-Day Timer": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Follow-up Batches": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Prepare Follow-up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-up Email": {
+      "main": [
+        [
+          {
+            "node": "Update Status to Sent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to Sent2": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Batches": {
+      "main": [
+        [
+          {
+            "node": "Split Follow-up Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Follow-up Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sent1 Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Split Follow-up Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Prepare Follow-up Email",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Follow-up Email": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prepare Follow-up Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "e6a7455e-9dd0-4cc5-9b2d-c0baa088d8ec",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-06-06T18:50:19.746Z",
+      "updatedAt": "2025-06-06T18:50:19.746Z",
+      "id": "3Gnv1LN4Hfr2dNxa",
+      "name": "coldmail"
+    }
+  ],
+  "disabled": false
+}

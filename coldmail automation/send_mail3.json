@@ -1,0 +1,538 @@
+{
+  "createdAt": "2025-06-25T09:36:40.069Z",
+  "updatedAt": "2025-06-25T09:55:24.000Z",
+  "id": "bW0QwQuaLgUHruYB",
+  "name": "send mail3 v2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "id": "d1097935-61a7-49e6-ad04-52f893afeb4e",
+      "name": "Schedule Final Follow-up Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        40
+      ],
+      "notes": "Triggers final follow-up checking every 8 hours.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "sent2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3357cf6d-1625-4b5d-8828-185158327331",
+      "name": "Read Sent2 Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        60,
+        -60
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Fetches all leads with 'sent2' status who have received the first follow-up.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check which leads are ready for final follow-up (after 4 days)\nconst items = $input.all();\nconst readyForFinalFollowup = [];\nconst fourDaysInMs = 4 * 24 * 60 * 60 * 1000; // 4 days in milliseconds\n\nfor (const item of items) {\n  const lead = item.json;\n  \n  // Check lastSent timestamp\n  if (!lead.lastSent) {\n    console.log(`No lastSent for ${lead.email}, skipping`);\n    continue;\n  }\n  \n  const lastSentDate = new Date(lead.lastSent);\n  const now = new Date();\n  const timeDiff = now - lastSentDate;\n  \n  // Check if 4 days have passed\n  if (timeDiff >= fourDaysInMs) {\n    console.log(`Lead ${lead.email} ready for final follow-up (${Math.floor(timeDiff / (24*60*60*1000))} days since last email)`);\n    readyForFinalFollowup.push(item);\n  } else {\n    const daysRemaining = Math.ceil((fourDaysInMs - timeDiff) / (24*60*60*1000));\n    console.log(`Lead ${lead.email} not ready - ${daysRemaining} days remaining`);\n  }\n}\n\nconsole.log(`Found ${readyForFinalFollowup.length} leads ready for final follow-up out of ${items.length} checked`);\nreturn readyForFinalFollowup;"
+      },
+      "id": "e0f6bb40-0a1d-4b19-bb1c-dc219e019413",
+      "name": "Check 4-Day Timer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        -60
+      ],
+      "alwaysOutputData": true,
+      "notes": "Checks which leads are ready for final follow-up - whether 4 days have passed since the second email.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7071f5f1-2aba-4715-83d0-86aef3a3236f",
+      "name": "Split Final Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        720,
+        -60
+      ],
+      "notes": "Splits final follow-up into small batches of 3 for careful sending.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "fromEmail": "kevin@startstrategus.com",
+        "toEmail": "={{ $json.output.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "html": "={{ $json.output.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b57b3e84-7c88-4b3c-92c2-36ef4b2c3dbf",
+      "name": "Send Final Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1260,
+        -140
+      ],
+      "webhookId": "e81bec67-82e7-4f65-ba39-504f546be94d",
+      "credentials": {
+        "smtp": {
+          "id": "Z6GpQyrSCzwprROi",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Sends final follow-up email through Mailcheap SMTP account.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "completed",
+            "lastSent": "={{ $now }}",
+            "campaign": "cold_email_final",
+            "email": "={{ $json.accepted[0] }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site",
+              "displayName": "site",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lastSent",
+              "displayName": "lastSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateAdded",
+              "displayName": "dateAdded",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5136a2c8-b638-49dc-955a-a25b57b41fc5",
+      "name": "Update Status to Completed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1440,
+        -140
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Updates lead status to 'completed' - ending the cold email sequence.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "amount": 45
+      },
+      "id": "08d7f6e6-ee45-497a-a9e1-f20dd7980e8f",
+      "name": "Wait Between Batches",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        -60
+      ],
+      "webhookId": "228da1ca-89d5-4e1b-9981-32dbe83c5bdc",
+      "notes": "45-second pause between final follow-up batches.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {},
+      "id": "84437052-2d40-45c6-a2a3-74277110c9e4",
+      "name": "Manual Final Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -160
+      ],
+      "notes": "Manual trigger for testing final follow-up workflow.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e969633c-b0ad-457c-84bb-65a0147406d3",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        500,
+        -60
+      ],
+      "id": "8ba48de6-6302-4358-a3aa-a5921e2a3b70",
+      "name": "If",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"email\": \"thebest@mail.com\",\n\t\"subject\": \"personalized subject\",\n    \"body\": \"personalized body\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1080,
+        20
+      ],
+      "id": "5fd351f3-da11-447f-9455-1dce3ce2782a",
+      "name": "Structured Output Parser",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        940,
+        20
+      ],
+      "id": "d4595e85-af58-427a-96a6-497299862631",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "e7nJtMfWteAoFgZc",
+          "name": "Azure Open AI account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=emailCandidates: {{ $json.email }}\n\nsiteContent: {{ $json.siteContent }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "### ROLE\nYou are an AI automation follow-up specialist. Writing on behalf of Kevin Guldager.\n\n### TASK\nUsing the variables below:\n\n1. Pick the single most relevant contact email from ‹emailCandidates›\n   – prefer business-wide addresses (info@, hello@, contact@)\n   – else first personal-looking address\n\n2. Draft a concise and friendly follow-up email (second message), specifically:\n   • Targeting small real-estate or finance firms in the USA.\n   • Briefly reminding about your previous email, offering to help them increase revenue, reduce costs, and save valuable time using AI automation.\n   • Quickly restating capabilities (chatbots, voice agents, workflow automation, lead gen, AI support, dashboards, content creation, sales tools, finance automations).\n   • Emphasizing that you'd like to hear their specific challenges or pain points to customize the best solution for them.\n   • Using a warm, consultative tone, direct second-person \"you\".\n   • Closing with a clear, encouraging call-to-action to reply or schedule a brief call to discuss their specific needs.\n\n3. Output **only** valid JSON in this form:\n\n```json\n{\n  \"email\": \"<chosen email>\",\n  \"subject\": \"<max 60 chars follow-up style>\",\n  \"body\": \"<150-200 word friendly follow-up message>\"\n}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        920,
+        -140
+      ],
+      "id": "cb535363-22a7-4bfa-8ce6-abf31385147d",
+      "name": "Prepare Follow-up End Email",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Schedule Final Follow-up Check": {
+      "main": [
+        [
+          {
+            "node": "Read Sent2 Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sent2 Leads": {
+      "main": [
+        [
+          {
+            "node": "Check 4-Day Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check 4-Day Timer": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Final Batches": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Prepare Follow-up End Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Final Email": {
+      "main": [
+        [
+          {
+            "node": "Update Status to Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to Completed": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Batches": {
+      "main": [
+        [
+          {
+            "node": "Split Final Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Final Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sent2 Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Split Final Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Prepare Follow-up End Email",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prepare Follow-up End Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Follow-up End Email": {
+      "main": [
+        [
+          {
+            "node": "Send Final Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "c1eb3a10-eef4-493d-9f0e-acddeacac4cd",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-06-06T18:50:19.746Z",
+      "updatedAt": "2025-06-06T18:50:19.746Z",
+      "id": "3Gnv1LN4Hfr2dNxa",
+      "name": "coldmail"
+    }
+  ],
+  "disabled": false
+}

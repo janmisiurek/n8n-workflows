@@ -1,0 +1,293 @@
+{
+  "createdAt": "2025-06-20T11:54:51.220Z",
+  "updatedAt": "2025-06-21T11:20:33.000Z",
+  "id": "f8CJAXK4h8zHEJfS",
+  "name": "google map query v2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "32bef0cf-51c2-414e-9127-e633fbd10c16",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        580,
+        -160
+      ],
+      "notes": "Processes each Google Maps search query one by one in a controlled loop to avoid overwhelming the mailscraper workflow.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "F7INqY9D5NwfVZ2Y",
+          "mode": "list",
+          "cachedResultName": "mailscraper v2"
+        },
+        "options": {}
+      },
+      "id": "ae145be9-6df0-4aa7-992d-bf6230647608",
+      "name": "Execute Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        -60
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Executes the mailscraper workflow for each search query to extract business emails from Google Maps results.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-r1-0528-qwen3-8b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        40,
+        20
+      ],
+      "id": "ecb4ebe4-a061-4efc-8dc2-ed7e8c0e598b",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "tDC02JLJvKTNEWDw",
+          "name": "OpenRouter account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -180,
+        -160
+      ],
+      "id": "07295234-293f-4220-8ee0-73f00d67599f",
+      "name": "When chat message received",
+      "webhookId": "51b0fc9a-32b5-4d40-865b-612b22e63cf2",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"query\": \"copenhagen+dentist\"\n  },\n  {\n    \"query\": \"aarhus+dentist\"\n  },\n  {\n    \"query\": \"odense+dentist\"\n  },\n  {\n    \"query\": \"aalborg+dentist\"\n  },\n  {\n    \"query\": \"esbjerg+dentist\"\n  },\n  {\n    \"query\": \"randers+dentist\"\n  },\n  {\n    \"query\": \"kolding+dentist\"\n  },\n  {\n    \"query\": \"vejle+dentist\"\n  },\n  {\n    \"query\": \"roskilde+dentist\"\n  },\n  {\n    \"query\": \"horsens+dentist\"\n  }\n]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        20
+      ],
+      "id": "09dc3e23-d36e-45e1-9c28-562edb8f6b93",
+      "name": "Structured Output Parser",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a query generation assistant.\n\nYour task is to generate search queries for Google Maps in order to help the user find *small firms* in the *United States* that operate in the *real estate* and *finance* sectors.\n\nUse names of towns and cities across the US. Focus on diversity in location (different states and regions) and combine them with relevant business terms like \"real estate agency\", \"mortgage broker\", \"financial advisor\", or \"property management\".\n\n# Output format:\nReturn your results as a JSON array, where each object has the format:\n{\n  \"query\": \"city+business_type\"\n}\n\nExample:\n[\n  {\n    \"query\": \"boulder+real+estate+agency\"\n  },\n  {\n    \"query\": \"charleston+financial+advisor\"\n  },\n  {\n    \"query\": \"naperville+property+management\"\n  },\n  ...\n]\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        20,
+        -160
+      ],
+      "id": "04939dbe-00d0-4b7c-a491-519e2c5a3781",
+      "name": "Generate queries",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json.output;\n\nconst transformed = input.map(entry => {\n  return {\n    json: {\n      query: entry.query.trim().replace(/\\s+/g, '+')\n    }\n  };\n});\n\nreturn transformed;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        -160
+      ],
+      "id": "5dd0e7d1-b1c3-4173-8a1d-4fa5edaca8e9",
+      "name": "Separate And Format",
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate queries",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Generate queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate queries",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate queries": {
+      "main": [
+        [
+          {
+            "node": "Separate And Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separate And Format": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "When clicking ‘Test workflow’": [
+      {
+        "json": {
+          "query": "copenhagen+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "aarhus+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "odense+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "aalborg+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "esbjerg+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "randers+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "kolding+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "vejle+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "roskilde+dentist"
+        }
+      },
+      {
+        "json": {
+          "query": "horsens+dentist"
+        }
+      }
+    ]
+  },
+  "versionId": "6fe21881-888c-4f59-9e07-6cf47759d224",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-06-06T18:50:19.746Z",
+      "updatedAt": "2025-06-06T18:50:19.746Z",
+      "id": "3Gnv1LN4Hfr2dNxa",
+      "name": "coldmail"
+    }
+  ],
+  "disabled": false
+}

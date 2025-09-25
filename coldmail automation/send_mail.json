@@ -1,0 +1,495 @@
+{
+  "createdAt": "2025-06-21T09:32:33.754Z",
+  "updatedAt": "2025-06-21T10:11:45.000Z",
+  "id": "1oyvOO3Q1vQnpnY4",
+  "name": "send mail v2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "bccd290e-3703-4964-b957-a0e9514599d4",
+      "name": "Schedule Email Sending",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -200,
+        100
+      ],
+      "notes": "Triggers email sending every hour during business hours. Can be customized with CRON for precise timing.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "new"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "57a71ec7-021e-4b1f-b8ee-e4d5c9c36e81",
+      "name": "Read New Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Fetches leads with 'new' status from Google Sheets. Filters only unprocessed contacts.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Daily limit - maximum 50 emails per day\nconst DAILY_LIMIT = 1;\nconst items = $input.all();\n\n// Check if we would exceed the limit\nif (items.length > DAILY_LIMIT) {\n  console.log(`Limiting to ${DAILY_LIMIT} emails from ${items.length} available`);\n  return items.slice(0, DAILY_LIMIT);\n}\n\nconsole.log(`Processing ${items.length} leads`);\nreturn items;"
+      },
+      "id": "cd2aa385-82e2-4d4c-9d33-c6bd4d264fc5",
+      "name": "Apply Daily Limit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "notes": "Limits the number of emails sent daily to avoid SMTP limits and prevent spam triggers.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "7868a4fc-e27d-4b89-a156-48fc6e0a34a3",
+      "name": "Split Into Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        460,
+        0
+      ],
+      "notes": "Splits leads into batches of 10 for controlled sending and SMTP account warm-up.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "fromEmail": "kevin@startstrategus.com",
+        "toEmail": "={{ $json.output.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "html": "={{ $json.output.body }}",
+        "options": {}
+      },
+      "id": "13f52cd4-2167-4c07-8bd4-28da76d288c2",
+      "name": "Send Initial Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1180,
+        -60
+      ],
+      "webhookId": "e2a102c2-6403-47dd-b340-43e2c5978fa9",
+      "credentials": {
+        "smtp": {
+          "id": "Z6GpQyrSCzwprROi",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Sends the first cold email message through Mailcheap SMTP account.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "sent1",
+            "lastSent": "={{ $now }}",
+            "campaign": "cold_email_v1",
+            "email": "={{ $json.accepted[0] }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site",
+              "displayName": "site",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lastSent",
+              "displayName": "lastSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateAdded",
+              "displayName": "dateAdded",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ad511505-2eb8-4b67-926d-d2bd142693ec",
+      "name": "Update Status to Sent1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1600,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Updates lead status to 'sent1' with timestamp of first email sent.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {},
+      "id": "734921fa-0f45-4c43-a80c-18d139d9b22e",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -100
+      ],
+      "notes": "Manual trigger for testing workflow before enabling automatic sending.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=emailCandidates: {{ $json.email }}\n\nsiteContent: {{ $json.siteContent }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "### ROLE You are DeepSeek R1, a strategic AI-automation consultant.  ### TASK Using the variables below: 1. Pick the single most relevant contact email from ‹emailCandidates›      – prefer business-wide addresses (info@, hello@, contact@)      – else first personal-looking address   2. Draft an outreach email that:      • Targets small real-estate / finance firms in the USA      • Mentions you help increase revenue, cut costs and save time with AI      • Lists capabilities at a high level (chatbots, voice agents, workflow automation, lead gen, AI support, dashboards, content, sales tools, finance automations)      • Invites them to share their pain points so you can tailor a solution      • Uses a friendly, consultative tone, second-person “you”      • Ends with a clear call to action to reply or book a short call   3. Output **only** valid JSON in this form:   ```json {   \"email\": \"<chosen email>\",   \"subject\": \"<max 60 chars>\",   \"body\": \"<150-200 word message>\" }"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        700,
+        -140
+      ],
+      "id": "6d4df582-f4cc-44e9-8f64-017531b95a0d",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-r1-0528:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        720,
+        40
+      ],
+      "id": "f1f88cdb-f092-49ad-84e7-f0ebbeb99aea",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "tDC02JLJvKTNEWDw",
+          "name": "OpenRouter account"
+        }
+      },
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"email\": \"thebest@mail.com\",\n\t\"subject\": \"personalized subject\",\n    \"body\": \"personalized body\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        40
+      ],
+      "id": "946a485f-29cd-4361-94b1-b88fd08edc15",
+      "name": "Structured Output Parser",
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Schedule Email Sending": {
+      "main": [
+        [
+          {
+            "node": "Read New Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read New Leads": {
+      "main": [
+        [
+          {
+            "node": "Apply Daily Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Daily Limit": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Initial Email": {
+      "main": [
+        [
+          {
+            "node": "Update Status to Sent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to Sent1": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read New Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send Initial Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Send Initial Email": [
+      {
+        "json": {
+          "accepted": [
+            "jashoster@gmail.com"
+          ],
+          "rejected": [],
+          "ehlo": [
+            "PIPELINING",
+            "SIZE 52534336",
+            "ETRN",
+            "AUTH PLAIN LOGIN",
+            "AUTH=PLAIN LOGIN",
+            "ENHANCEDSTATUSCODES",
+            "8BITMIME",
+            "DSN",
+            "CHUNKING"
+          ],
+          "envelopeTime": 111,
+          "messageTime": 971,
+          "messageSize": 830,
+          "response": "250 2.0.0 Ok: queued as 2BA0B20A22",
+          "envelope": {
+            "from": "kevin@startstrategus.com",
+            "to": [
+              "jashoster@gmail.com"
+            ]
+          },
+          "messageId": "<c10fc771-2e8c-ab4c-569a-5dc6f0b82f63@startstrategus.com>"
+        }
+      }
+    ]
+  },
+  "versionId": "e01c62a4-73a5-4579-9b25-a763c6352c80",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-06-06T18:50:19.746Z",
+      "updatedAt": "2025-06-06T18:50:19.746Z",
+      "id": "3Gnv1LN4Hfr2dNxa",
+      "name": "coldmail"
+    }
+  ],
+  "disabled": false
+}

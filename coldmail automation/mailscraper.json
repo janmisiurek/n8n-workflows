@@ -1,0 +1,858 @@
+{
+  "createdAt": "2025-06-20T12:31:17.458Z",
+  "updatedAt": "2025-06-21T16:22:03.000Z",
+  "id": "F7INqY9D5NwfVZ2Y",
+  "name": "mailscraper v2",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.data\n \nconst regex = /https?:\\/\\/[^\\/]+/g\n \nurls = data.match(regex)\n \nreturn urls.map(url => ({json: {url: url}}))"
+      },
+      "id": "f3872a37-8c74-4ed9-91f7-5805de10f02d",
+      "name": "Extract Website URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        20
+      ],
+      "notes": "Extracts all website URLs from Google Maps HTML using regex pattern. Filters out relative URLs and keeps only complete domain URLs.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7ecfbe72-c09a-482e-8f81-43d9e7bb2917",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "(google|gstatic|ggpht|schema|example)",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "82c03835-4d7f-44da-846f-26852cb6c3c1",
+      "name": "Filter Google Domains",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        20
+      ],
+      "notes": "Removes Google-owned domains and example URLs to keep only legitimate business websites from the extracted URLs.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "url",
+        "options": {}
+      },
+      "id": "97c0d0c6-c6dd-4a4e-bf45-448e706d7474",
+      "name": "Remove Duplicate URLs",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        740,
+        20
+      ],
+      "notes": "Eliminates duplicate website URLs to avoid scraping the same site multiple times and improve efficiency.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "59c82397-fef7-40d9-933f-927dc14f9e8e",
+      "name": "Fetch Website Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        -220
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Downloads the HTML content of each business website to search for contact email addresses.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preserve URL with HTML data\nconst items = $input.all();\nconst urlFromLoop = $('Process URLs in Batches').item.json.url;\n\nreturn items.map(item => ({\n  json: {\n    data: item.json.data || item.json,\n    url: urlFromLoop\n  }\n}));"
+      },
+      "id": "c4abb75c-59f3-49c4-a716-1c2182566b51",
+      "name": "Preserve URL with Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        -80
+      ],
+      "notes": "Combines HTML data from HTTP request with original URL for email extraction",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "656719a7-d167-4895-a308-05c7fbef835f",
+      "name": "Process URLs in Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        960,
+        -80
+      ],
+      "onError": "continueErrorOutput",
+      "notes": "Processes website URLs one by one in a controlled loop to avoid overwhelming servers and respect rate limits.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json.data;\nconsole.log(\"Received data:\", data);\n\nconst sourceUrl = $json.url || $json.sourceUrl || 'unknown-source';\nconsole.log(\"Received sourceUrl:\", sourceUrl);\n\nconst emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.(?!png|jpg|gif|jpeg)[a-zA-Z]{2,}/g;\n\nconst emails = data.match(emailRegex);\nconsole.log(\"Found emails:\", emails);\n\n// Safe domain extraction\nlet domain = 'unknown';\nif (sourceUrl && sourceUrl !== 'unknown-source') {\n  try {\n    domain = new URL(sourceUrl).hostname.replace('www.', '');\n    console.log(\"Extracted domain (URL method):\", domain);\n  } catch (e) {\n    console.log('Invalid URL, using fallback:', sourceUrl);\n    domain = sourceUrl.replace(/^https?:\\/\\//, '').replace('www.', '').split('/')[0];\n    console.log(\"Extracted domain (fallback):\", domain);\n  }\n} else {\n  console.log(\"No sourceUrl provided or unknown-source\");\n}\n\nconsole.log('Final domain:', domain);\n\nif (emails && emails.length > 0) {\n  const mapped = emails.map(email => ({\n    json: {\n      email: email,\n      site: domain,\n      status: 'new',\n      lastSent: '',\n      campaign: 'mailscraper_auto',\n      dateAdded: new Date().toISOString()\n    }\n  }));\n  console.log(\"Returning mapped:\", mapped);\n  return mapped;\n} else {\n  console.log(\"No emails to return\");\n  return [];\n}\n"
+      },
+      "id": "8ca2941e-c4d8-43cd-ae59-59ae764b0331",
+      "name": "Extract Email Addresses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        580
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Searches webpage content for valid email addresses using regex. Excludes image file extensions to avoid false positives. Adds all required columns for email campaigns.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "dcccc2b6-103d-48eb-aca1-c63022c3948b",
+      "name": "Process Webpages in Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        400
+      ],
+      "onError": "continueErrorOutput",
+      "notes": "Iterates through each downloaded webpage to extract email addresses in a controlled batch process.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean duplicates and empty objects\nconst items = $input.all();\nconsole.log('Received items before cleaning:', items.length);\n\n// Filter empty objects and collect all emails\nconst validItems = items\n  .map(item => item.json)\n  .filter(obj => obj && obj.email && obj.site && obj.email.trim() !== '' && obj.site.trim() !== '');\n\nconsole.log('Items after filtering empty:', validItems.length);\n\n// Remove duplicates based on email + site combination\nconst uniqueItems = [];\nconst seen = new Set();\n\nvalidItems.forEach(item => {\n  const key = `${item.email.toLowerCase()}|${item.site.toLowerCase()}`;\n  if (!seen.has(key)) {\n    seen.add(key);\n    uniqueItems.push(item);\n  }\n});\n\nconsole.log('Unique items after deduplication:', uniqueItems.length);\nconsole.log('Sample unique items:', uniqueItems.slice(0, 3));\n\n// Return cleaned data\nreturn uniqueItems.map(item => ({ json: item }));"
+      },
+      "id": "7ddc0103-be02-4596-86e7-b1d32b7d0e28",
+      "name": "Clean Duplicates and Empty Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        220
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Removes duplicate email+site combinations and filters out empty objects for clean data processing",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 659458992,
+          "mode": "list",
+          "cachedResultName": "emails and links",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m92t6eJBpYKyCdRB0JIbQqvnisjnWkeTRfwlyshFbIQ/edit#gid=659458992"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "site": "={{ $json.site }}",
+            "email": "={{ $json.email }}",
+            "lastSent": "={{ $json.lastSent }}",
+            "status": "={{ $json.status }}",
+            "campaign": "={{ $json.campaign }}",
+            "dateAdded": "={{ $json.dateAdded }}",
+            "siteContent": "={{ $json.siteContent.replace(/\\n/g, '\\\\n\\\\n') }}\n"
+          },
+          "matchingColumns": [
+            "email",
+            "site"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "site",
+              "displayName": "site",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lastSent",
+              "displayName": "lastSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "campaign",
+              "displayName": "campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dateAdded",
+              "displayName": "dateAdded",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "siteContent",
+              "displayName": "siteContent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "c510813b-d820-40f7-a120-c31db7ebe453",
+      "name": "Save Emails to Spreadsheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2480,
+        220
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Appends all collected email addresses with complete campaign tracking data to the designated Google Sheets spreadsheet for lead management and cold email campaigns.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "url": "=https://www.google.com/maps/search/{{ $json.query }}",
+        "options": {}
+      },
+      "id": "670db3af-34bd-4f0b-be1a-d3c10ff7f0a8",
+      "name": "Search Google Maps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        20
+      ],
+      "notes": "Performs a search on Google Maps using the provided query parameter to find relevant business listings in the specified area or category.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "email"
+            },
+            {
+              "fieldToAggregate": "site"
+            },
+            {
+              "fieldToAggregate": "status"
+            },
+            {
+              "fieldToAggregate": "lastSent"
+            },
+            {
+              "fieldToAggregate": "campaign"
+            },
+            {
+              "fieldToAggregate": "dateAdded"
+            },
+            {
+              "fieldToAggregate": "cleanText",
+              "renameField": true,
+              "outputFieldName": "siteContent"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "id": "cea8f2ce-50ad-47ca-aaa1-6dc9c56d2a4d",
+      "name": "Combine All Emails",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        220
+      ],
+      "notes": "Aggregates email addresses with all campaign tracking fields from all processed websites into a single collection for further processing.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {},
+      "id": "5ca0c2ea-9dd3-4aba-bac6-fed702b2662f",
+      "name": "Workflow Execution Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        20
+      ],
+      "notes": "Main trigger that accepts a search query parameter to start the email scraping process from Google Maps results.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -440
+      ],
+      "id": "afa17674-7e06-4ad2-9dfe-544d72d0c298",
+      "name": "Manual Setup Trigger",
+      "notes": "One-time manual trigger for initial setup. Creates the Google Sheets spreadsheet structure before first workflow execution.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "google maps",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "emails and links"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        80,
+        -440
+      ],
+      "id": "e64e4c02-fcd8-440f-8e4e-b2ec2cd7c3fe",
+      "name": "Create Spreadsheet Setup",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ysNIgg5YIPpmfJFA",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Creates the initial Google Sheets spreadsheet with complete structure for email campaign tracking. Includes all columns needed for send_mail workflow. Run this once before using the main workflow.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "email, site, status, lastSent, campaign, dateAdded, siteContent",
+        "options": {}
+      },
+      "id": "25f4ce72-2409-410b-bea6-c1c884cd61f5",
+      "name": "Split Email Collection",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2100,
+        220
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Splits the aggregated email collection into individual email records with all campaign tracking fields for duplicate removal and final processing.",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const siteMap = new Map();\n\nfor (const item of items) {\n  const site = (item.json.site || '').toLowerCase();\n  const email = item.json.email || '';\n\n  if (!siteMap.has(site)) {\n    siteMap.set(site, {\n      ...item.json,\n      emailList: new Set([email])\n    });\n  } else {\n    siteMap.get(site).emailList.add(email);\n  }\n}\n\nconst result = [];\n\nfor (const [site, data] of siteMap.entries()) {\n  const emailsCombined = Array.from(data.emailList).join(',');\n\n  delete data.emailList;\n  data.email = emailsCombined;\n\n  result.push({ json: data });\n}\n\nreturn result;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        220
+      ],
+      "id": "f1236943-b5c3-45ef-a633-2d42929fb2ea",
+      "name": "Code",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "plainText",
+              "cssSelector": "body"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        420
+      ],
+      "id": "95fa5a80-ddfe-4b94-b4fa-40fe051e04a6",
+      "name": "HTML",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.plainText;\n\n// 1. Usuń wszystkie odniesienia do plików graficznych (linki, ścieżki, base64)\nlet cleaned = text.replace(/\\[?[^\\]\\s]*\\.(png|jpe?g|gif|svg|webp|bmp|tiff)(\\?[^\\s]*)?\\]?/gi, '');\n\n// 2. Usuń całe linie zawierające atrybuty SVG/kodu graficznego\ncleaned = cleaned.replace(/.*(viewBox|path|fill|d=|aria-hidden|xmlns|enable-background).*\\n?/gi, '');\n\n// 3. Usuń ciągi ≥6 liczb w linii (charakterystyczne dla path, współrzędnych itp.)\ncleaned = cleaned.replace(/([-\\d\\.]+\\s+){5,}[-\\d\\.]+/g, '');\n\n// 4. Usuń linie z samymi liczbami, przecinkami i spacjami (pozostałości SVG)\ncleaned = cleaned.split('\\n')\n  .filter(line => !/([-]?\\d+(\\.\\d+)?[, ]?){5,}/.test(line))\n  .join('\\n');\n\n// 5. Usuń dowolne nawiasy kwadratowe i zawartość w środku – [cokolwiek]\ncleaned = cleaned.replace(/\\[[^\\]]*\\]/g, '');\n\n// 6. Redukuj wielokrotne puste linie do jednej\ncleaned = cleaned.replace(/\\n{2,}/g, '\\n\\n');\n\nreturn [\n  {\n    json: {\n      cleanText: cleaned.trim()\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        420
+      ],
+      "id": "fceacde4-8f6e-42b3-a985-de1147e86363",
+      "name": "Code1",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1780,
+        520
+      ],
+      "id": "76d7b9c0-363f-4518-880f-f73700810f00",
+      "name": "Merge",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean duplicates and empty objects\nconst items = $input.all();\nconsole.log('Received items before cleaning:', items.length);\n\n// Filter empty objects and collect all emails\nconst validItems = items\n  .map(item => item.json)\n  .filter(obj => obj && obj.email && obj.site && obj.email.trim() !== '' && obj.site.trim() !== '');\n\nconsole.log('Items after filtering empty:', validItems.length);\n\n// Remove duplicates based on email + site combination\nconst uniqueItems = [];\nconst seen = new Set();\n\nvalidItems.forEach(item => {\n  const key = `${item.email.toLowerCase()}|${item.site.toLowerCase()}`;\n  if (!seen.has(key)) {\n    seen.add(key);\n    uniqueItems.push(item);\n  }\n});\n\nconsole.log('Unique items after deduplication:', uniqueItems.length);\nconsole.log('Sample unique items:', uniqueItems.slice(0, 3));\n\n// Return cleaned data\nreturn uniqueItems.map(item => ({ json: item }));"
+      },
+      "id": "0862eb06-83ee-48ca-a3b9-9944bd5ffb36",
+      "name": "Clean Duplicates and Empty Items1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        580
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Removes duplicate email+site combinations and filters out empty objects for clean data processing",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\n\nif (input.length < 2) {\n  throw new Error('Potrzebne są co najmniej dwa itemy w wejściu.');\n}\n\n// scal pola JSON z dwóch pierwszych itemów\nconst merged = {\n  ...input[0].json,\n  ...input[1].json\n};\n\nreturn [\n  {\n    json: merged\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        600
+      ],
+      "id": "b2cab982-63a0-456b-84c7-6d63281a6292",
+      "name": "Code2",
+      "disabled": false,
+      "connections": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  return {\n    json: {\n      ...item.json,\n      siteContent: item.json.siteContent.replace(/\\n/g, '\\\\n')\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        220
+      ],
+      "id": "acedb0b1-3876-4f1b-a136-db703ebd37fe",
+      "name": "Code3",
+      "disabled": false,
+      "connections": {}
+    }
+  ],
+  "connections": {
+    "Extract Website URLs": {
+      "main": [
+        [
+          {
+            "node": "Filter Google Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Google Domains": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicate URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicate URLs": {
+      "main": [
+        [
+          {
+            "node": "Process URLs in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Website Content": {
+      "main": [
+        [
+          {
+            "node": "Preserve URL with Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preserve URL with Data": {
+      "main": [
+        [
+          {
+            "node": "Process URLs in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process URLs in Batches": {
+      "main": [
+        [
+          {
+            "node": "Process Webpages in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Website Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Addresses": {
+      "main": [
+        [
+          {
+            "node": "Clean Duplicates and Empty Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Webpages in Batches": {
+      "main": [
+        [
+          {
+            "node": "Clean Duplicates and Empty Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Email Addresses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google Maps": {
+      "main": [
+        [
+          {
+            "node": "Extract Website URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Emails": {
+      "main": [
+        [
+          {
+            "node": "Split Email Collection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Email Collection": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Execution Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search Google Maps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Setup Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create Spreadsheet Setup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Spreadsheet Setup": {
+      "main": [
+        []
+      ]
+    },
+    "Clean Duplicates and Empty Items": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Combine All Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Duplicates and Empty Items1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Process Webpages in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Save Emails to Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Warsaw",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "query": "bay+area+dentist"
+        }
+      }
+    ],
+    "Workflow Execution Trigger": [
+      {
+        "json": {
+          "query": "boston:gym"
+        }
+      }
+    ]
+  },
+  "versionId": "b781d62f-e659-405e-88e8-7764974343b7",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-06-06T18:50:19.746Z",
+      "updatedAt": "2025-06-06T18:50:19.746Z",
+      "id": "3Gnv1LN4Hfr2dNxa",
+      "name": "coldmail"
+    }
+  ],
+  "disabled": false
+}
