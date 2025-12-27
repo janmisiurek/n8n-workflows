@@ -12,7 +12,7 @@
           "message"
         ],
         "additionalFields": {
-          "userIds": "1951630053,329703279"
+          "userIds": "000000000"
         }
       },
       "type": "n8n-nodes-base.telegramTrigger",
