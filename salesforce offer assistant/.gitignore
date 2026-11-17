@@ -1,0 +1,5 @@
+.runtime/
+.tooling/
+*.log
+salesforce/.sf/
+salesforce/.sfdx/

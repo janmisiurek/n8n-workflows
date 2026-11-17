@@ -1,0 +1,5 @@
+{
+  "salesforceBase": "https://your-my-domain.example.com",
+  "n8nBase": "http://localhost:5678",
+  "openaiModel": "gpt-4.1-mini"
+}
